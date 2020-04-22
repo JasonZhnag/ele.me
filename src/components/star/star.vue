@@ -28,7 +28,7 @@ export default {
       return 'star-' + this.size
     },
     itemClasses() {
-      let result = []
+      const result = []
       const score = Math.floor(this.score * 2) / 2
       const hasDecimal = score % 1 !== 0
       const integer = Math.floor(score)

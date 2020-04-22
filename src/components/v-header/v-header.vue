@@ -31,7 +31,7 @@
   </div>
 </template>
 <script>
-// import SupportIco from 'components/support-ico/support-ico'
+import SupportIco from 'components/support-ico/support-ico'
 
 export default {
   name: 'v-header',
@@ -39,18 +39,28 @@ export default {
     seller: {
       type: Object,
       default() {
-        return []
-      }
-    },
-    data() {
-      return {
-        size: 1
+        return {}
       }
     }
+  },
+  data() {
+    return {
+      size: 1
+    }
+  },
+  methods: {
+    detailShow() {
+      this.headerDetailComp = this.headerDetailComp || this.$createHeaderDetail({
+        $props: {
+          seller: 'seller'
+        }
+      })
+      this.headerDetailComp.show()
+    }
+  },
+  components: {
+    SupportIco
   }
-  // components: {
-  //   SupportIco
-  // }
 }
 </script>
 
