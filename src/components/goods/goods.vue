@@ -2,7 +2,7 @@
   <div class="goods">
     <div class="scroll-nav-wrapper">
       <cube-scroll-nav :side="true" :data="goods" :options="scrollOptions" v-if="goods.length">
-        <!-- <template slot="bar" slot-scope="props">
+        <template slot="bar" slot-scope="props">
           <cube-scroll-nav-bar
             direction="vertical"
             :labels="props.labels"
@@ -19,7 +19,7 @@
               </div>
             </template>
           </cube-scroll-nav-bar>
-        </template> -->
+        </template>
         <cube-scroll-nav-panel
           v-for="good in goods"
           :key="good.name"
@@ -31,6 +31,7 @@
               v-for="food in good.foods"
               :key="food.name"
               class="food-item"
+              @click="selectFood(food)"
             >
               <div class="icon">
                 <img width="57" height="57" :src="food.icon" />
@@ -70,8 +71,8 @@
 import { getGoods } from 'api'
 import ShopCart from 'components/shop-cart/shop-cart'
 import CartControl from 'components/cart-control/cart-control'
-// import SupportIco from 'components/support-ico/support-ico'
-// import Bubble from 'components/bubble/bubble'
+import SupportIco from 'components/support-ico/support-ico'
+import Bubble from 'components/bubble/bubble'
 
 export default {
   name: 'goods',
@@ -89,7 +90,8 @@ export default {
       scrollOptions: {
         click: false,
         directionLockThreshold: 0
-      }
+      },
+      selectedFood: {}
     }
   },
   computed: {
@@ -107,21 +109,45 @@ export default {
         })
       })
       return ret
+    },
+    barTxts() {
+      const ret = []
+      this.goods.forEach((good) => {
+        const { type, name, foods } = good
+        let count = 0
+        foods.forEach((food) => {
+          count += food.count || 0
+        })
+        ret.push({
+          type,
+          name,
+          count
+        })
+      })
+      return ret
     }
   },
   methods: {
     fetch() {
-      getGoods().then((goods) => {
-        this.goods = goods
-      })
+      if (!this.fetched) {
+        this.fetched = true
+        getGoods().then((goods) => {
+          this.goods = goods
+        })
+      }
     },
     onAdd(el) {
       this.$refs.shopCart.drop(el)
+    },
+    selectFood(food) {
+      this.selectedFood = food
     }
   },
   components: {
     ShopCart,
-    CartControl
+    CartControl,
+    SupportIco,
+    Bubble
   }
 }
 </script>

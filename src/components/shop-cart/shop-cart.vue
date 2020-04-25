@@ -1,20 +1,21 @@
 <template>
   <div>
     <div class="shopcart">
-      <div class="content">
+      <div class="content" @click="toggleList">
         <div class="content-left">
           <div class="logo-wrapper">
-            <div class="logo">
-              <i class="icon-shopping_cart"></i>
+            <div class="logo" :class="{ 'highlight': totalCount > 0 }">
+              <i class="icon-shopping_cart" :class="{ 'highlight': totalCount > 0 }"></i>
             </div>
-            <div class="num">
+            <div class="num" v-show="totalCount > 0">
+              <bubble :num="totalCount"></bubble>
             </div>
           </div>
-          <div class="price">￥</div>
+          <div class="price" :class="{ 'highlight': totalPrice > 0 }">￥{{ totalPrice }}</div>
           <div class="desc">另需配送费￥{{ deliveryPrice }}元</div>
         </div>
         <div class="content-right">
-          <div class="pay" :class="payClass">{{payDesc}}</div>
+          <div class="pay" :class="payClass" @click.stop="pay">{{payDesc}}</div>
         </div>
       </div>
       <div class="ball-container">
@@ -31,6 +32,7 @@
 </template>
 
 <script>
+import Bubble from 'components/bubble/bubble'
 
 const BALL_LEN = 10
 const innerClsHook = 'inner-hook'
@@ -48,7 +50,7 @@ function createBalls() {
 export default {
   name: 'shop-cart',
   props: {
-    selectFoods: {
+    selectedFoods: {
       type: Array,
       default: () => []
     },
@@ -71,20 +73,21 @@ export default {
   },
   data() {
     return {
-      balls: createBalls()
+      balls: createBalls(),
+      listFold: this.fold
     }
   },
   computed: {
     totalPrice() {
       let total = 0
-      this.selectFoods.forEach((food) => {
+      this.selectedFoods.forEach((food) => {
         total += food.price * food.count
       })
       return total
     },
     totalCount() {
       let count = 0
-      this.selectFoods.forEach((food) => {
+      this.selectedFoods.forEach((food) => {
         count += food.count
       })
       return count
@@ -145,7 +148,81 @@ export default {
         ball.show = false
         el.style.display = 'none'
       }
+    },
+    toggleList() {
+      if (this.listFold) {
+        if (!this.totalCount) {
+          return
+        }
+        this.listFold = false
+        this._showShopCartList()
+        this._showShopCartSticky()
+      } else {
+        this.listFold = true
+        this._hideShopCartList()
+      }
+    },
+    pay(e) {
+      if (this.totalPrice < this.minPrice) {
+        return
+      }
+      this.$createDialog({
+        title: '支付',
+        content: `您需要支付共${this.totalPrice}元`
+      }).show()
+      e.stopPropagation()
+    },
+    _showShopCartList() {
+      this.shopCartListComp = this.shopCartListComp || this.$createShopCartList({
+        $props: {
+          selectFoods: 'selectedFoods'
+        },
+        $events: {
+          hide: () => {
+            this.listFold = true
+          },
+          leave: () => {
+            this._hideShopCartSticky()
+          },
+          add: (el) => {
+            this.shopCartStickyComp.drop(el)
+          }
+        }
+      })
+      this.shopCartListComp.show()
+    },
+    _showShopCartSticky() {
+      this.shopCartStickyComp = this.shopCartStickyComp || this.$createShopCartSticky({
+        $props: {
+          selectFoods: 'selectedFoods',
+          deliveryPrice: 'deliveryPrice',
+          minPrice: 'minPrice',
+          fold: 'listFold',
+          list: this.shopCartListComp
+        }
+      })
+      this.shopCartStickyComp.show()
+    },
+    _hideShopCartList() {
+      const comp = this.sticky ? this.$parent.list : this.shopCartListComp
+      comp && comp.hide && comp.hide()
+    },
+    _hideShopCartSticky() {
+      this.shopCartStickyComp.hide()
     }
+  },
+  watch: {
+    fold(newVal) {
+      this.listFold = newVal
+    },
+    totalCount(newVal) {
+      if (!this.listFold && !newVal) {
+        this._hideShopCartList()
+      }
+    }
+  },
+  components: {
+    Bubble
   }
 }
 </script>
